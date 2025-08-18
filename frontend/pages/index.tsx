@@ -8,12 +8,19 @@ export default function Home() {
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const getApiUrl = () => {
+    if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+      return "http://localhost:8000/api/chat";
+    }
+    return "/api/chat";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setResponse('');
     try {
-      const res = await fetch(`/api/chat`, {
+      const res = await fetch(getApiUrl(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -27,7 +34,17 @@ export default function Home() {
       });
 
       if (!res.ok) {
-        setResponse('Error: ' + res.statusText);
+        let errorMsg = 'Error: ' + res.statusText;
+        try {
+          const errorData = await res.json();
+          if (errorData && errorData.detail) {
+            errorMsg += `\n${errorData.detail}`;
+          }
+        } catch {
+          // fallback if response is not JSON
+          errorMsg += `\n${await res.text()}`;
+        }
+        setResponse(errorMsg);
         setLoading(false);
         return;
       }
@@ -46,7 +63,7 @@ export default function Home() {
         setResponse(await res.text());
       }
     } catch (err: any) {
-      setResponse('Error: ' + err.message);
+      setResponse('Network error: ' + err.message);
     }
     setLoading(false);
   };
