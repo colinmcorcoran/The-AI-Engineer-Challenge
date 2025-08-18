@@ -163,3 +163,34 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 .vercel
+
+# Node.js / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/.env
+frontend/.env.production
+frontend/.env.development
+frontend/.DS_Store
+
+# Python
+api/__pycache__/
+api/*.pyc
+api/.env
+api/.DS_Store
+
+# General
+*.log
+.env
+.DS_Store
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE/editor folders
+.vscode/
+.idea/
+*.swp
+*.swo
