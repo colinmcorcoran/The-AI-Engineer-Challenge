@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 
+const backendUrl = typeof window !== "undefined"
+  ? window.location.origin
+  : ""; // fallback for SSR
+
 export default function Home() {
   const [developerMessage, setDeveloperMessage] = useState('');
   const [userMessage, setUserMessage] = useState('');
@@ -13,7 +17,7 @@ export default function Home() {
     setLoading(true);
     setResponse('');
     try {
-      const res = await fetch('http://localhost:8000/api/chat', {
+      const res = await fetch(`${backendUrl}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
