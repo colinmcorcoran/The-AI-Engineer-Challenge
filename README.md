@@ -90,6 +90,9 @@ Got everything in place? Let's move on!
 2. From the project root, install dependencies with `uv sync`. This creates `.venv/` (and fetches Python 3.12 automatically if needed).
 3. Set your OpenAI API key in the shell before running the server, for example `export OPENAI_API_KEY=sk-...`.
 4. Start the backend directly from the project root with `uv run uvicorn api.index:app --reload`. The server will run on `http://localhost:8000` with auto-reload enabled for development.
+
+   Note: The frontend posts JSON `{ "message": "..." }` to `/api/chat`. There is an alternate backend in `api/app.py` that supports a streaming API (`developer_message`, `user_message`, `api_key`, `stream`). Both `api.index:app` and `api.app:app` are compatible with the current frontend (the frontend uses the simple `{ message }` payload).
+
 5. Additional backend details live in `api/README.md`.
 
 </details>

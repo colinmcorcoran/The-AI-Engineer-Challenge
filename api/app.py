@@ -33,41 +33,67 @@ logger = logging.getLogger(__name__)
 # Define the data model for chat requests using Pydantic
 # This ensures incoming request data is properly validated
 class ChatRequest(BaseModel):
-    developer_message: str  # Message from the developer/system
-    user_message: str      # Message from the user
+    # Backwards-compatible: accept either a single `message`, or `developer_message` + `user_message`.
+    message: Optional[str] = None
+    developer_message: Optional[str] = ""  # Message from the developer/system
+    user_message: Optional[str] = ""      # Message from the user
     model: Optional[str] = "gpt-4.1-mini"  # Optional model selection with default
-    api_key: str          # OpenAI API key for authentication
+    api_key: Optional[str] = None          # OpenAI API key for authentication (optional)
+    stream: Optional[bool] = False         # Whether to stream response (default False for compatibility)
 
 # Define the main chat endpoint that handles POST requests
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
-    logger.info(f"Received chat request: developer_message='{request.developer_message}', user_message='{request.user_message}', model='{request.model}'")
+    logger.info(f"Received chat request: message='{request.message}', developer_message='{request.developer_message}', user_message='{request.user_message}', model='{request.model}', stream={request.stream}")
     try:
-        # Initialize OpenAI client with the provided API key
-        client = OpenAI(api_key=request.api_key)
-        
-        # Create an async generator function for streaming responses
-        async def generate():
-            # Create a streaming chat completion request
-            stream = client.chat.completions.create(
-                model=request.model,
-                messages=[
-                    {"role": "developer", "content": request.developer_message},
-                    {"role": "user", "content": request.user_message}
-                ],
-                stream=True  # Enable streaming response
-            )
-            
-            # Yield each chunk of the response as it becomes available
-            for chunk in stream:
-                if chunk.choices[0].delta.content is not None:
-                    logger.debug(f"Streaming chunk: {chunk.choices[0].delta.content}")
-                    yield chunk.choices[0].delta.content
+        # Prefer provided API key, fallback to environment variable
+        api_key = request.api_key or os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="OPENAI_API_KEY not configured")
 
-        logger.info("Starting streaming response to client.")
-        # Return a streaming response to the client
-        return StreamingResponse(generate(), media_type="text/plain")
+        client = OpenAI(api_key=api_key)
+
+        # Build messages depending on payload shape
+        if request.message:
+            messages = [
+                {"role": "system", "content": "You are a supportive mental coach."},
+                {"role": "user", "content": request.message}
+            ]
+        else:
+            # Use developer and user roles if provided
+            dev_content = request.developer_message or "You are a supportive mental coach."
+            messages = [
+                {"role": "developer", "content": dev_content},
+                {"role": "user", "content": request.user_message}
+            ]
+
+        # If streaming requested, stream text/plain chunks
+        if request.stream:
+            async def generate():
+                stream = client.chat.completions.create(
+                    model=request.model,
+                    messages=messages,
+                    stream=True
+                )
+                for chunk in stream:
+                    if chunk.choices[0].delta.content is not None:
+                        logger.debug(f"Streaming chunk: {chunk.choices[0].delta.content}")
+                        yield chunk.choices[0].delta.content
+
+            logger.info("Starting streaming response to client.")
+            return StreamingResponse(generate(), media_type="text/plain")
+
+        # Otherwise, do a single request and return JSON
+        logger.info("Performing non-streaming completion.")
+        response = client.chat.completions.create(
+            model=request.model,
+            messages=messages
+        )
+        reply = response.choices[0].message.content
+        return {"reply": reply}
     
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error in /api/chat: {str(e)}")
         # Handle any errors that occur during processing
