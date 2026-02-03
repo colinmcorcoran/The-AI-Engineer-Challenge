@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 
 export default function Home() {
-  const [developerMessage, setDeveloperMessage] = useState('');
-  const [userMessage, setUserMessage] = useState('');
+  const [message, setMessage] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -18,7 +17,12 @@ export default function Home() {
     setLoading(true);
     setResponse('');
 
-    const combinedMessage = `${developerMessage ? developerMessage + "\n\n" : ""}${userMessage}`.trim();
+    if (message.trim() === '') {
+      setResponse('Please enter a message.');
+      setLoading(false);
+      return;
+    }
+
 
     try {
       const res = await fetch(getApiUrl(), {
@@ -26,7 +30,7 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ message: combinedMessage })
+        body: JSON.stringify({ message })
       });
 
       if (!res.ok) {
@@ -64,21 +68,15 @@ export default function Home() {
       <h1>Welcome to The AI Engineer Challenge Frontend</h1>
       <form onSubmit={handleSubmit}>
         <div>
-          <label>Developer Message:</label>
-          <input
-            type="text"
-            value={developerMessage}
-            onChange={e => setDeveloperMessage(e.target.value)}
+          <label htmlFor="message">Message:</label>
+          <textarea
+            id="message"
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            rows={8}
+            style={{ width: '100%', whiteSpace: 'pre-wrap', resize: 'vertical' }}
             required
-          />
-        </div>
-        <div>
-          <label>User Message:</label>
-          <input
-            type="text"
-            value={userMessage}
-            onChange={e => setUserMessage(e.target.value)}
-            required
+            wrap="soft"
           />
         </div>
         <button type="submit" disabled={loading}>
@@ -87,7 +85,7 @@ export default function Home() {
       </form>
       <div>
         <h2>Response:</h2>
-        <pre>{response}</pre>
+        <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word' }}>{response}</pre>
       </div>
     </div>
   );

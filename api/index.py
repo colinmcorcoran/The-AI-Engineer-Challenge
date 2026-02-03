@@ -4,6 +4,13 @@ from pydantic import BaseModel
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -24,10 +31,12 @@ class ChatRequest(BaseModel):
 
 @app.get("/")
 def root():
+    logger.info("Got root")
     return {"status": "ok"}
 
 @app.post("/api/chat")
 def chat(request: ChatRequest):
+    logger.info(f"Got chat {request.__dict__}")
     if not os.getenv("OPENAI_API_KEY"):
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY not configured")
     

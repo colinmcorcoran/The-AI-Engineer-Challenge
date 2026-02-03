@@ -3,6 +3,8 @@
 ## Running the Frontend (Next.js)
 
 > Note: The frontend expects the backend to be running at `http://localhost:8000` and will POST to `/api/chat` with `{ message }`. Make sure the backend server is started and `OPENAI_API_KEY` is set in the backend environment.
+>
+> The frontend UI uses a single **multiline** `Message` field (a large wrapping textarea). Enter your prompt or combined developer/user text into that single box and press **Send**.
 
 
 1. Open a terminal and navigate to the `frontend` directory:
